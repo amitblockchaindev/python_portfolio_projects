@@ -1,0 +1,56 @@
+	<module name="ErrorModule" onError="abort">
+
+		<print label="Print ❌❌❌❌❌❌❌❌" version="1.0">
+			<![CDATA[❌❌❌❌❌❌❌❌❌❌❌❌❌❌]]>
+		</print>
+
+
+		<callProject project="/DSI_MFT/UTILS/ErrorDetailsReader" runInSameJob="true" returnUserVariables="true" version="1.0">
+			<variable name="processStatus" value="${processStatus}" />
+		</callProject>
+
+
+		<sendEmail label="Send Error Email" resourceId="Local_SMTP_CORP" toList="${errorEmail}" keyLocation="KeyVault" version="2.0">
+			<from address="${DefaultNoReplyEmailAddress}" keyLocation="KeyVault" />
+			<subject>
+				<![CDATA[❌${system.environment}:ERROR${if(filename<>'.',concat(':',filename),'')}:JobId:${system.job.id}:Errored while ${processStatus}]]>
+			</subject>
+			<message>
+				<![CDATA[CurrentSystemState : ${processStatus}
+----------------------------------------------------
+${currentSystemState}
+
+
+ActionToBeTaken
+--------------------------
+${actionToBeTaken}
+
+
+Error Details
+----------------
+${system.job.error}
+
+
+
+** This is auto generated email by ${system.environment}. Please do not reply. Contact DLITSSFusionSupport@Emerson.com for any queries **
+
+JobId : ${system.job.id} | JobName:${system.job.name} | Project : ${system.project.name}
+Notification Date Time: ${CurrentTimestamp(timestampPattern)}
+]]>
+			</message>
+		</sendEmail>
+
+
+		<callProject label="Call Project: Print Status to SENT_ERROR_EMAIL" project="/DSI_MFT/UTILS/PrintStatus" version="1.0">
+			<variable name="processStatus" value="SENT_ERROR_EMAIL" />
+		</callProject>
+
+
+		<raiseError label="Flag Job as Error" version="1.0">
+			<message>${system.job.error}</message>
+		</raiseError>
+
+
+		<ftpCloseSession sessionId="${currentSFTPSessionID}" version="1.0" />
+
+	</module>
